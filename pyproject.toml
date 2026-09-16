@@ -1,0 +1,37 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "metalurgica-andina-qc"
+version = "0.1.0"
+description = "Pipeline de limpieza y análisis de calidad para datos de producción industrial con formatos inconsistentes, basado en un caso real de la clase IIN2002 (USFQ)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "pandas>=2.2.0",
+    "openpyxl>=3.1.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.2.0", "pytest-cov>=5.0.0", "ruff>=0.4.0", "mypy>=1.10.0"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "W", "F", "I"]
+
+[tool.mypy]
+python_version = "3.11"
+ignore_missing_imports = true
+check_untyped_defs = true
+warn_unused_ignores = true
