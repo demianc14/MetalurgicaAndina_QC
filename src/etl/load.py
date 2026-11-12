@@ -130,11 +130,11 @@ def aggregate_por_linea_turno(df: pd.DataFrame) -> pd.DataFrame:
     """Cantidad_Producida total por Línea (filas) y Turno (columnas).
 
     Equivalente a la tabla dinámica "Suma de Cantidad_Producida" del Excel
-    original. A diferencia de esa tabla, las filas con Turno no registrado
-    NO se reparten entre Mañana/Tarde/Noche (ahí sí se habían asumido sin
-    documentarlo): aparecen en su propia columna "turno no registrado",
+    original. Si alguna fila queda con Turno no registrado (vacío y sin
+    confirmación en data/manual/turno_overrides.csv), NO se reparte entre
+    Mañana/Tarde/Noche: aparece en su propia columna "turno no registrado",
     así el total general sigue cuadrando sin inventar a qué turno
-    pertenecen.
+    pertenece.
     """
     return df.pivot_table(
         index="Linea_Produccion",

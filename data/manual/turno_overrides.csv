@@ -5,3 +5,6 @@ ID_Registro,Turno_Confirmado,Fuente
 2204,Mañana,"Hoja Instrucciones de MetalurgicaAndina_DCruz_AprMay2026.xlsx: turnos confirmados por el supervisor (mayo)"
 2302,Tarde,"Hoja Instrucciones de MetalurgicaAndina_DCruz_AprMay2026.xlsx: turnos confirmados por el supervisor (mayo)"
 2182,Noche,"Hoja Instrucciones de MetalurgicaAndina_DCruz_AprMay2026.xlsx: turnos confirmados por el supervisor (mayo)"
+8,Mañana,"Marzo: tabla Correcciones_Turno del ejercicio de Power Query. Valor tomado de la hoja 02_Produccion del Excel original; lo confirma el checkpoint de paro promedio por turno de la guía IIN2002_PQ_Dashboards (ver tests/test_guia_powerbi.py)"
+25,Tarde,"Marzo: tabla Correcciones_Turno del ejercicio de Power Query. Valor tomado de la hoja 02_Produccion del Excel original; lo confirma el checkpoint de paro promedio por turno de la guía IIN2002_PQ_Dashboards (ver tests/test_guia_powerbi.py)"
+36,Noche,"Marzo: tabla Correcciones_Turno del ejercicio de Power Query. Valor tomado de la hoja 02_Produccion del Excel original; lo confirma el checkpoint de paro promedio por turno de la guía IIN2002_PQ_Dashboards (ver tests/test_guia_powerbi.py)"
