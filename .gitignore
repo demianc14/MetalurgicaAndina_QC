@@ -9,3 +9,7 @@ __pycache__/
 .ipynb_checkpoints/
 dist/
 build/
+.ruff_cache/
+.DS_Store
+# Base SQLite generada por `python -m src.sql_load` (reproducible)
+data/processed/*.db
