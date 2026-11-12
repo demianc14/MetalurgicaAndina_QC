@@ -15,8 +15,8 @@ cada diferencia.
 | Herramienta | Qué hace aquí | Dónde verlo |
 |---|---|---|
 | **Excel** | Limpieza con fórmulas (`XLOOKUP`, `IFS`, `COUNTIFS`, `SUMIFS`, `FILTER`, `SORT`, `UNIQUE`, `GETPIVOTDATA`), 13 tablas dinámicas, umbrales en hojas de parámetros y un dashboard | [docs/excel.md](docs/excel.md) · [entregables/excel/](entregables/excel/) |
-| **Power BI** | Dos dashboards: calidad y paros de los tres meses, y un ejercicio donde toda la limpieza se hace en Power Query (37 pasos en M) | [docs/powerbi.md](docs/powerbi.md) · [entregables/powerbi/](entregables/powerbi/) |
-| **Python + SQL** | Pipeline ETL en pandas con reporte de calidad, modelo estrella en SQLite con 10 vistas, 95 tests y CI | [docs/python.md](docs/python.md) · [src/](src/) · [sql/](sql/) |
+| **Power BI** | Dos dashboards: calidad y paros de los tres meses, y un ejercicio donde toda la limpieza se hace en Power Query (37 pasos en M). Un tercero, de tres páginas, está en construcción | [docs/powerbi.md](docs/powerbi.md) · [entregables/powerbi/](entregables/powerbi/) |
+| **Python + SQL** | Pipeline ETL en pandas con reporte de calidad, modelo estrella en SQLite con 10 vistas, 108 tests y CI | [docs/python.md](docs/python.md) · [src/](src/) · [sql/](sql/) |
 
 ## Reporte de calidad de datos
 
@@ -28,8 +28,8 @@ Salida de `python -m src.cli`:
 | Duplicados exactos removidos | 5 | 10 |
 | Corridas resultantes | 90 | 200 |
 | SKU con espacios sobrantes, normalizados para el cruce | 14 | 26 |
-| Turnos vacíos llenados con confirmación documentada | 0 | 6 |
-| Turnos que quedan como "no registrado" | 3 | 0 |
+| Turnos vacíos llenados con confirmación documentada | 3 | 6 |
+| Turnos que quedan como "no registrado" | 0 | 0 |
 | Paros vacíos (se dejan vacíos, no se convierten en 0) | 5 | 7 |
 | Fechas ambiguas que siguen pendientes de supervisor | 0 | 3 |
 | Clasificación: Excelente / Aceptable / Crítico | 11 / 36 / 43 | 32 / 76 / 92 |
@@ -54,6 +54,9 @@ código y los compara contra pandas y contra las vistas SQL.
 | Minutos de paro | 3.790 |
 | Clasificación Excelente / Aceptable / Crítico | 43 / 112 / 135 |
 | Corridas problemáticas | 9 |
+| Producción por turno: Mañana / Noche / Tarde | 22.222 / 27.424 / 23.502 |
+| Turno de cada corrida, fila por fila | 290 de 290 |
+| Producción por línea y turno, marzo (tabla dinámica del caso original) | 9 celdas |
 | Producción y defectuosas por línea y turno, abril-mayo (2 tablas dinámicas) | 18 celdas y sus totales |
 | Calidad, cumplimiento y problemáticos por turno, abril-mayo | 15 celdas |
 | Paro por turno y por línea, y % defectuoso ponderado por línea | 9 celdas |
@@ -65,7 +68,6 @@ código y los compara contra pandas y contra las vistas SQL.
 | Qué difiere | Excel | Python | Por qué |
 |---|---|---|---|
 | Costo total de tres meses | USD 366.882,29 | USD 365.045,29 | En el consolidado, el registro 1 tiene SKU `MA-3001`; el dato crudo dice `MA-1001`. Esa sola fila explica los USD 1.837 |
-| Producción por turno | Mañana 22.222, Noche 27.424, Tarde 23.502 | 21.949, 27.202, 23.102 y 895 sin turno | 3 corridas de marzo llegan sin turno. El Excel les asignó uno; el repo no tiene el documento que lo respalde. El total general coincide |
 | Fechas pendientes de supervisor | 4 | 3 | `05/05/2026` es 5 de mayo se lea como se lea. La fórmula del Excel la marca como ambigua; Python la resuelve. Mueve USD 864 de costo a mayo |
 | Paro promedio por corrida | 13,39 min | 13,63 min | 5 paros vacíos de marzo son 0 en el consolidado y vacíos en Python. La suma no cambia, el promedio sí |
 | Etiquetas de cumplimiento | `No Cumple` (43) y `No cumple` (92) | Una sola etiqueta | Mayúscula distinta entre marzo y abril-mayo. En un filtro de Excel o Power BI son dos categorías |
@@ -74,8 +76,10 @@ Hay una diferencia más que hoy no cambia ningún número: Excel y Power Query c
 Excelente con `< 1 %` y Python con `<= 1 %`. Ninguna corrida cae exactamente en 1 %, y un
 test avisa si eso cambia.
 
-Power BI: las cifras de las tarjetas están por confirmar contra capturas
-(`TODO(demian)`, ver [docs/powerbi.md](docs/powerbi.md)).
+**Power BI.** [`tests/test_guia_powerbi.py`](tests/test_guia_powerbi.py) comprueba que el
+pipeline reproduce los 12 grupos de checkpoints de la guía del dashboard de marzo
+(tarjetas, matrices y top 5 de sus tres páginas). Las cifras del dashboard de tres meses
+están por confirmar contra capturas (`TODO(demian)`, ver [docs/powerbi.md](docs/powerbi.md)).
 
 ## Cómo correrlo
 
@@ -85,7 +89,7 @@ pip install -e ".[dev]"
 
 python -m src.cli       # limpia los dos archivos, muestra el reporte y escribe data/processed/
 python -m src.sql_load  # crea la base SQLite y exporta las vistas a CSV
-pytest                  # 95 tests, incluida la prueba de consistencia
+pytest                  # 108 tests, incluida la prueba de consistencia
 ruff check . && mypy src
 ```
 
@@ -95,15 +99,14 @@ Windows.
 
 ## Mi rol y limitaciones
 
-<!-- TODO(demian): confirmar si el consolidado y los dashboards fueron individuales o en grupo. La hoja de instrucciones dice "Grupo 2". Si fue en grupo, nombrar al equipo y decir qué hiciste tú. -->
-
-Proyecto de la clase IIN2002 Analítica y Power BI (USFQ, 2026). El pipeline de Python, la
-capa SQL y la prueba de consistencia los hice aparte, para comprobar los resultados del
-Excel.
+Proyecto individual de la clase IIN2002 Analítica y Power BI (USFQ, 2026). Todo el
+trabajo es mío: la limpieza y los análisis en Excel, los dashboards de Power BI, y el
+pipeline de Python, la capa SQL y la prueba de consistencia, que hice aparte para
+comprobar los resultados del Excel. Los datos crudos y el enunciado son del curso.
 
 - **Dataset chico:** 290 corridas. Muestra método, no permite conclusiones estadísticas.
 - **Promedios sin ponderar** en algunas tablas dinámicas y en una matriz del dashboard;
   las vistas SQL incluyen el % ponderado por volumen.
 - **Caso académico:** datos de un ejercicio de clase, no de una empresa real.
-- **3 fechas y 3 turnos siguen sin resolver** porque no hay respaldo para decidirlos.
+- **3 fechas de abril-mayo siguen sin resolver** porque no hay respaldo para decidirlas.
 - **Los pedidos de marzo** no se pueden recalcular: su hoja cruda no está en el repo.

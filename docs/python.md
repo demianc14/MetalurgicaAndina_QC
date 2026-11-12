@@ -48,12 +48,11 @@ aplica por `ID_Registro` desde `data/manual/turno_overrides.csv`, que tiene una 
 
 - **Abril-mayo:** los 6 turnos vacíos están confirmados por el supervisor en la hoja
   `Instrucciones` del archivo. Se aplican.
-- **Marzo:** 3 filas (registros 8, 25 y 36) quedan como `turno no registrado`. El Excel
-  les asignó Mañana, Tarde y Noche, pero el documento que lo respalda no está en el repo.
-  Hay indicios de que sí existió: las instrucciones de abril-mayo dicen "igual que en la
-  Sesión 2 original" y el ejercicio de Power Query usa una tabla `Correcciones_Turno`.
-  `TODO(demian)`: si tienes esas instrucciones, agrega las 3 filas a
-  `turno_overrides.csv` con su fuente y la diferencia con el Excel desaparece.
+- **Marzo:** 3 filas (registros 8, 25 y 36) llegan sin turno. El ejercicio de Power Query
+  las llena con la tabla `Correcciones_Turno`, y el Excel original las tiene como Mañana,
+  Tarde y Noche. Esa asignación está comprobada: el checkpoint de paro promedio por turno
+  de la guía del dashboard (15,3 / 12,3 / 15,3) solo se cumple con ella
+  (`test_p3_paro_promedio_por_turno`). Se aplican.
 
 ## Paros vacíos
 
