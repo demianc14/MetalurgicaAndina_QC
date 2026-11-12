@@ -1,0 +1,21 @@
+origen,linea,turno,corridas,cantidad_producida,unidades_defectuosas
+abril-mayo,Línea 1,Mañana,14,3633,112
+abril-mayo,Línea 1,Noche,24,6010,166
+abril-mayo,Línea 1,Tarde,28,6087,142
+abril-mayo,Línea 2,Mañana,26,6041,190
+abril-mayo,Línea 2,Noche,19,4899,155
+abril-mayo,Línea 2,Tarde,21,5644,179
+abril-mayo,Línea 3,Mañana,17,3908,115
+abril-mayo,Línea 3,Noche,26,7952,236
+abril-mayo,Línea 3,Tarde,25,6040,176
+marzo,Línea 1,Mañana,12,3225,78
+marzo,Línea 1,Noche,12,3072,109
+marzo,Línea 1,Tarde,5,1075,32
+marzo,Línea 1,turno no registrado,2,622,16
+marzo,Línea 2,Mañana,11,2893,89
+marzo,Línea 2,Noche,10,2566,70
+marzo,Línea 2,Tarde,9,2222,86
+marzo,Línea 3,Mañana,10,2249,56
+marzo,Línea 3,Noche,10,2703,81
+marzo,Línea 3,Tarde,8,2034,73
+marzo,Línea 3,turno no registrado,1,273,1

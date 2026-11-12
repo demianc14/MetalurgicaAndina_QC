@@ -1,0 +1,8 @@
+origen,turno,corridas,excelente,aceptable,critico,cumple,problematicos,pct_defectuosos_ponderado
+abril-mayo,Mañana,57,10,17,30,27,3,0.03070240023560595
+abril-mayo,Noche,69,10,32,27,42,4,0.029531838184613753
+abril-mayo,Tarde,74,12,27,35,39,0,0.027966912385346914
+marzo,Mañana,33,4,17,12,21,0,0.026652324608581333
+marzo,Noche,32,3,13,16,16,1,0.031171322383407266
+marzo,Tarde,22,3,5,14,8,1,0.035828174826486585
+marzo,turno no registrado,3,1,1,1,2,0,0.01899441340782123
