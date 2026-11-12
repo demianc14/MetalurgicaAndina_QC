@@ -5,7 +5,7 @@ from datetime import date
 import pandas as pd
 import pytest
 
-from src.etl.extract import extract
+from src.etl.extract import ABR_MAY, extract, extract_dataset
 from src.etl.transform import (
     TURNO_NO_REGISTRADO,
     classify_date_format,
@@ -14,11 +14,13 @@ from src.etl.transform import (
     find_ambiguous_slash_dates,
     is_slash_ambiguous,
     load_date_overrides,
+    load_turno_overrides,
     normalize_linea_produccion,
     normalize_sku,
     normalize_turno,
     parse_date,
     resolve_dates,
+    resolve_turnos,
     transform,
 )
 
@@ -195,19 +197,87 @@ def test_transform_linea_y_turno_quedan_en_set_canonico():
 
 
 def test_find_ambiguous_slash_dates_sobre_dataset_real():
+    """Marzo trae 28 fechas slash con ambos números <=12. Dos son
+    "03/03/2026" (día = mes): no hay nada que decidir, así que quedan 26
+    genuinamente ambiguas."""
     df_produccion, _ = extract()
     deduped, _ = deduplicate_exact(df_produccion)
     ambiguas = find_ambiguous_slash_dates(deduped)
-    assert len(ambiguas) == 28
+    assert len(ambiguas) == 26
     assert list(ambiguas.columns) == ["ID_Registro", "Fecha"]
 
 
-def test_date_overrides_csv_del_repo_cubre_las_28_filas_ambiguas():
+def test_date_overrides_csv_del_repo_cubre_las_filas_ambiguas():
     """data/manual/date_overrides.csv (recuperado de "02_Produccion" del
-    Excel original) debe cubrir exactamente las mismas 28 filas que
-    `find_ambiguous_slash_dates` detecta de forma independiente."""
+    Excel original) cubre las 26 filas ambiguas, más las 2 "03/03/2026"
+    que el propio supervisor anotó como no ambiguas — y ahí el override
+    dice lo mismo que el parseo automático."""
     df_produccion, _ = extract()
     deduped, _ = deduplicate_exact(df_produccion)
     ambiguas = set(find_ambiguous_slash_dates(deduped)["ID_Registro"])
     overrides = load_date_overrides()
-    assert set(overrides) == ambiguas
+    assert ambiguas <= set(overrides)
+    assert set(overrides) - ambiguas == {11, 13}
+    assert overrides[11] == overrides[13] == parse_date("03/03/2026") == date(2026, 3, 3)
+
+
+# ---------------------------------------------------------------------------
+# Abril-mayo: meses válidos, abreviaturas en inglés y turnos confirmados
+# ---------------------------------------------------------------------------
+
+ABR_MAY_MESES = frozenset({4, 5})
+
+
+@pytest.mark.parametrize(
+    ("raw", "esperado"),
+    [
+        ("04/15/2026", date(2026, 4, 15)),  # 15 solo puede ser día
+        ("04/02/2026", date(2026, 4, 2)),   # 2 no es un mes válido del archivo
+        ("02/04/2026", date(2026, 4, 2)),   # mismo día, escrito DD/MM
+        ("05/05/2026", date(2026, 5, 5)),   # día = mes: nada que decidir
+        ("04/05/2026", None),               # 4-may o 5-abr: ambiguo de verdad
+        ("05/04/2026", None),
+    ],
+)
+def test_parse_date_con_meses_validos(raw, esperado):
+    assert parse_date(raw, ABR_MAY_MESES) == esperado
+
+
+def test_parse_date_sin_meses_validos_no_usa_contexto():
+    assert parse_date("04/02/2026") is None
+    assert is_slash_ambiguous("04/02/2026")
+    assert not is_slash_ambiguous("04/02/2026", ABR_MAY_MESES)
+
+
+def test_parse_date_abreviatura_en_ingles():
+    assert parse_date("03-Apr-26") == date(2026, 4, 3)
+    assert parse_date("03-Abr-26") == date(2026, 4, 3)
+
+
+def test_resolve_turnos_solo_llena_vacios():
+    df = pd.DataFrame({"ID_Registro": [1, 2, 3], "Turno": [float("nan"), " NOCHE ", None]})
+    turnos, n = resolve_turnos(df, {1: "Mañana", 2: "Tarde"})
+    assert turnos.tolist() == ["Mañana", "Noche", TURNO_NO_REGISTRADO]
+    assert n == 1
+
+
+def test_turno_overrides_del_repo_son_los_seis_de_abril_mayo():
+    overrides = load_turno_overrides()
+    assert overrides == {
+        2134: "Mañana", 2095: "Tarde", 2009: "Noche",
+        2204: "Mañana", 2302: "Tarde", 2182: "Noche",
+    }
+
+
+def test_transform_abril_mayo_sobre_dataset_real():
+    produccion_raw, _ = extract_dataset(ABR_MAY)
+    cleaned, report = transform(produccion_raw, meses_validos=ABR_MAY.meses_validos)
+    assert report.n_filas_originales == 210
+    assert report.n_duplicados_removidos == 10
+    assert len(cleaned) == 200
+    assert report.n_turnos_confirmados == 6
+    assert len(report.turnos_no_registrados) == 0
+    assert len(report.paros_faltantes) == 7
+    assert sorted(report.fechas_ambiguas_sin_resolver["ID_Registro"]) == [2175, 2178, 2179]
+    meses = {f.month for f in cleaned["Fecha"] if f is not None}
+    assert meses == {4, 5}
