@@ -99,6 +99,34 @@ Los 5 paros vacíos se dejan en `null` a propósito; el comentario está en el p
 (`TODO(demian)`: confirmar contra la captura): costo total producido USD 87.841,83 y
 691 unidades defectuosas.
 
+## 3. Producción, Calidad, Paros y costos (marzo, en construcción)
+
+Dashboard de tres páginas que se está armando en la clase, sobre la misma consulta de
+Power Query del ejercicio anterior. `TODO(demian)`: agregar el `.pbix` y sus capturas
+cuando esté terminado.
+
+| Página | Pregunta de negocio | Lo que debe poder leer el gerente |
+|---|---|---|
+| Producción | ¿Cuánto producimos, dónde y cuándo? | 22.934 unidades; la Línea 1 produce más (7.994); Tornillería es la categoría de mayor volumen (8.096) |
+| Calidad | ¿Cumplimos la meta de 3 % de defectuosas? | 43 de 90 corridas son críticas; solo 2 turnos son problemáticos |
+| Paros y costos | ¿Dónde perdemos tiempo y dónde se concentra el costo? | El turno de la tarde para menos (12,3 min por corrida frente a 15,3); el costo se concentra en Engranajes (USD 54.323 de 87.842) |
+
+Cada página tiene 3 segmentadores, 3 tarjetas y 3 visuales; las páginas comparten
+segmentadores sincronizados y un navegador.
+
+**Ya está validado sin abrir Power BI.** La guía de la clase trae los valores que debe
+mostrar cada tarjeta y cada visual. [`tests/test_guia_powerbi.py`](../tests/test_guia_powerbi.py)
+comprueba que el pipeline de Python llega a los mismos números:
+
+| Página | Qué se comprueba |
+|---|---|
+| Producción | Tarjetas (22.934, 691, 87,84 K), producción por línea y por categoría, 13 días con máximo y mínimo, y la interacción al filtrar Línea 1 |
+| Calidad | Tarjetas (90, 691, 2), calidad por línea, top 5 de productos con más defectuosas y las 2 filas de turnos problemáticos |
+| Paros y costos | Paro promedio 14,5 min y total 1.235, paro promedio por turno, matriz de costo categoría × línea y top 5 de productos por costo |
+
+El paro promedio es 14,5 y no 13,7 porque los 5 paros vacíos no se cuentan como 0: es la
+misma decisión en Power Query y en Python.
+
 ## Medidas DAX
 
 **Ninguno de los dos archivos tiene medidas DAX.** Todos los visuales usan agregaciones
