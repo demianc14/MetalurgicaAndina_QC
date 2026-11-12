@@ -172,8 +172,9 @@ def test_load_date_overrides_ignora_filas_sin_llenar(tmp_path):
 
 def test_transform_sobre_dataset_real_cuantifica_cada_decision():
     """Ancla los conteos reales del caso: 95 filas crudas, 5 duplicados
-    exactos (90 filas resultantes), 3 turnos no registrados, 5
-    Tiempo_Paro_Min faltantes. Las 28 fechas slash ambiguas SÍ están
+    exactos (90 filas resultantes), 3 turnos vacíos llenados con su
+    confirmación documentada (turno_overrides.csv), 5 Tiempo_Paro_Min
+    faltantes. Las fechas slash ambiguas SÍ están
     resueltas en este repo (data/manual/date_overrides.csv, recuperado de
     la hoja "02_Produccion" del Excel original — ver README), así que acá
     quedan en 0 sin resolver."""
@@ -183,7 +184,8 @@ def test_transform_sobre_dataset_real_cuantifica_cada_decision():
     assert report.n_filas_originales == 95
     assert report.n_duplicados_removidos == 5
     assert len(cleaned) == 90
-    assert len(report.turnos_no_registrados) == 3
+    assert report.n_turnos_confirmados == 3
+    assert len(report.turnos_no_registrados) == 0
     assert len(report.paros_faltantes) == 5
     assert len(report.fechas_ambiguas_sin_resolver) == 0
     assert cleaned["Fecha"].notna().all()
@@ -261,9 +263,11 @@ def test_resolve_turnos_solo_llena_vacios():
     assert n == 1
 
 
-def test_turno_overrides_del_repo_son_los_seis_de_abril_mayo():
+def test_turno_overrides_del_repo():
+    """3 de marzo (tabla Correcciones_Turno) y 6 de abril-mayo (hoja Instrucciones)."""
     overrides = load_turno_overrides()
     assert overrides == {
+        8: "Mañana", 25: "Tarde", 36: "Noche",
         2134: "Mañana", 2095: "Tarde", 2009: "Noche",
         2204: "Mañana", 2302: "Tarde", 2182: "Noche",
     }

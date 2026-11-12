@@ -244,29 +244,35 @@ def test_marzo_por_linea(
     assert filas[-1][2] == df["Unidades_Defectuosas"].sum() == 691
 
 
-def test_diferencia_turnos_de_marzo(
-    resultado: Resultado, xl_marzo: openpyxl.Workbook, consolidado: pd.DataFrame
+def test_marzo_por_turno(
+    resultado: Resultado, conn: sqlite3.Connection, xl_marzo: openpyxl.Workbook,
+    consolidado: pd.DataFrame,
 ) -> None:
-    """DIFERENCIA CONOCIDA: 3 filas de marzo llegan sin Turno.
-
-    El Excel les asignó Mañana/Tarde/Noche; el repo no tiene el documento
-    que lo respalde, así que Python las deja como 'turno no registrado'.
-    El total general coincide; los totales por turno difieren exactamente
-    en esas 3 filas.
-    """
+    """Producción línea × turno de marzo, incluidas las 3 corridas que llegan
+    sin Turno (registros 8, 25 y 36): se llenan desde turno_overrides.csv y
+    quedan igual que en el Excel."""
     excel = cruzada(bloque(xl_marzo, "02_Produccion", "AI11:AM15"))
-    df = parte(resultado, "marzo").set_index("ID_Registro")
-    sin_turno = df[df["Turno"] == "turno no registrado"]
-    assert sorted(sin_turno.index) == [8, 25, 36]
+    df = parte(resultado, "marzo")
+    pandas_ = df.groupby(["Linea_Produccion", "Turno"])["Cantidad_Producida"].sum()
+    vista = sql(conn, "SELECT * FROM v_produccion_linea_turno WHERE origen = 'marzo'")
+    vista_ = vista.set_index(["linea", "turno"])["cantidad_producida"]
+    for linea in LINEAS:
+        for turno in TURNOS:
+            assert excel[(linea, turno)] == pandas_[(linea, turno)] == vista_[(linea, turno)]
+    assert resultado.reportes["marzo"].n_turnos_confirmados == 3
+    por_id = df.set_index("ID_Registro")
+    assert por_id.loc[[8, 25, 36], "Turno"].tolist() == ["Mañana", "Tarde", "Noche"]
     assert consolidado.loc[[8, 25, 36], "Turno"].tolist() == ["Mañana", "Tarde", "Noche"]
 
-    pandas_ = df.groupby("Turno")["Cantidad_Producida"].sum()
-    asignado = consolidado.loc[sin_turno.index, "Turno"]
-    for turno in TURNOS:
-        movido = sin_turno.loc[asignado[asignado == turno].index, "Cantidad_Producida"].sum()
-        assert movido > 0
-        assert excel[("Total general", turno)] == pandas_[turno] + movido
-    assert excel[("Total general", "Total general")] == df["Cantidad_Producida"].sum()
+
+def test_tres_meses_por_turno(resultado: Resultado, consolidado: pd.DataFrame) -> None:
+    p = resultado.produccion
+    assert set(p["Turno"]) == set(TURNOS)
+    excel = consolidado.groupby("Turno")["Cantidad_Producida"].sum().to_dict()
+    assert excel == p.groupby("Turno")["Cantidad_Producida"].sum().to_dict()
+    assert excel == {"Mañana": 22222, "Noche": 27424, "Tarde": 23502}
+    turnos = p.set_index("ID_Registro").loc[consolidado.index, "Turno"]
+    assert (consolidado["Turno"] == turnos).all()
 
 
 # ---------------------------------------------------------------------------

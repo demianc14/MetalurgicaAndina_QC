@@ -146,16 +146,15 @@ def test_build_dataset_clasificacion_coincide_con_excel_original():
 
 
 def test_aggregate_por_linea_turno_total_general_coincide_con_excel_original():
-    """El total general (22934) coincide con la tabla dinámica del Excel
-    original. Los totales por turno NO coinciden a propósito: el Excel
-    original reparte silenciosamente los 3 turnos no registrados entre
-    Mañana/Noche/Tarde sin documentarlo; este pipeline los deja aparte en
-    su propia columna "turno no registrado" (ver transform.normalize_turno)."""
+    """El total general y los totales por turno coinciden con la tabla
+    dinámica del Excel original. Los 3 turnos vacíos de marzo se llenan
+    con la confirmación documentada en data/manual/turno_overrides.csv, así
+    que ya no queda ninguna corrida en "turno no registrado"."""
     dataset = _dataset_real()
     pivot = aggregate_por_linea_turno(dataset)
     assert pivot.loc["Total general", "Total general"] == 22934
-    assert "turno no registrado" in pivot.columns
-    assert pivot.loc["Total general", "turno no registrado"] == 895
+    assert "turno no registrado" not in pivot.columns
+    assert pivot.loc["Total general", ["Mañana", "Noche", "Tarde"]].tolist() == [8640, 8563, 5731]
 
 
 def test_aggregate_defectuosos_y_tasa_por_linea():
