@@ -1,0 +1,8 @@
+origen,turno,paro_min,corridas_sin_dato_de_paro
+abril-mayo,Mañana,725.0,2
+abril-mayo,Noche,1020.0,3
+abril-mayo,Tarde,810.0,2
+marzo,Mañana,495.0,1
+marzo,Noche,455.0,3
+marzo,Tarde,240.0,1
+marzo,turno no registrado,45.0,0
