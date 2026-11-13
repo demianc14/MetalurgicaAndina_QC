@@ -15,8 +15,8 @@ cada diferencia.
 | Herramienta | Qué hace aquí | Dónde verlo |
 |---|---|---|
 | **Excel** | Limpieza con fórmulas (`XLOOKUP`, `IFS`, `COUNTIFS`, `SUMIFS`, `FILTER`, `SORT`, `UNIQUE`, `GETPIVOTDATA`), 13 tablas dinámicas, umbrales en hojas de parámetros y un dashboard | [docs/excel.md](docs/excel.md) · [entregables/excel/](entregables/excel/) |
-| **Power BI** | Dos dashboards: calidad y paros de los tres meses, y un ejercicio donde toda la limpieza se hace en Power Query (37 pasos en M). Un tercero, de tres páginas, está en construcción | [docs/powerbi.md](docs/powerbi.md) · [entregables/powerbi/](entregables/powerbi/) |
-| **Python + SQL** | Pipeline ETL en pandas con reporte de calidad, modelo estrella en SQLite con 10 vistas, 108 tests y CI | [docs/python.md](docs/python.md) · [src/](src/) · [sql/](sql/) |
+| **Power BI** | Dos dashboards: calidad y paros de los tres meses, y un ejercicio donde toda la limpieza se hace en Power Query (37 pasos en M). Un tercero, de tres páginas, está en construcción | [docs/powerbi.md](docs/powerbi.md) (los `.pbix` no se publican) |
+| **Python + SQL** | Pipeline ETL en pandas con reporte de calidad, modelo estrella en SQLite con 10 vistas, 116 tests y CI | [docs/python.md](docs/python.md) · [src/](src/) · [sql/](sql/) |
 
 ## Reporte de calidad de datos
 
@@ -28,7 +28,8 @@ Salida de `python -m src.cli`:
 | Duplicados exactos removidos | 5 | 10 |
 | Corridas resultantes | 90 | 200 |
 | SKU con espacios sobrantes, normalizados para el cruce | 14 | 26 |
-| Turnos vacíos llenados con confirmación documentada | 3 | 6 |
+| Turnos vacíos confirmados por el supervisor (hoja `Instrucciones`) | 0 | 6 |
+| Turnos vacíos asignados por inferencia, no son dato de la fila ([ver abajo](#turnos-de-marzo-coinciden-por-inferencia-no-por-dato)) | 3 | 0 |
 | Turnos que quedan como "no registrado" | 0 | 0 |
 | Paros vacíos (se dejan vacíos, no se convierten en 0) | 5 | 7 |
 | Fechas ambiguas que siguen pendientes de supervisor | 0 | 3 |
@@ -36,7 +37,8 @@ Salida de `python -m src.cli`:
 | Corridas problemáticas (Crítico y paro > 30 min) | 2 | 7 |
 
 Las 26 fechas ambiguas de marzo se resolvieron con el criterio del supervisor que ya
-estaba documentado en el Excel original, no adivinando. Detalle en
+estaba documentado en el Excel original, no adivinando. Los 3 turnos vacíos de marzo, en
+cambio, no tienen confirmación escrita: se asignaron por inferencia y quedan marcados así. Detalle en
 [docs/python.md](docs/python.md).
 
 ## Excel vs Python: diferencias y por qué
@@ -54,14 +56,33 @@ código y los compara contra pandas y contra las vistas SQL.
 | Minutos de paro | 3.790 |
 | Clasificación Excelente / Aceptable / Crítico | 43 / 112 / 135 |
 | Corridas problemáticas | 9 |
-| Producción por turno: Mañana / Noche / Tarde | 22.222 / 27.424 / 23.502 |
-| Turno de cada corrida, fila por fila | 290 de 290 |
-| Producción por línea y turno, marzo (tabla dinámica del caso original) | 9 celdas |
+| Producción por turno: Mañana / Noche / Tarde ¹ | 22.222 / 27.424 / 23.502 |
+| Turno de cada corrida, fila por fila ¹ | 290 de 290 |
+| Producción por línea y turno, marzo (tabla dinámica del caso original) ¹ | 9 celdas |
 | Producción y defectuosas por línea y turno, abril-mayo (2 tablas dinámicas) | 18 celdas y sus totales |
 | Calidad, cumplimiento y problemáticos por turno, abril-mayo | 15 celdas |
 | Paro por turno y por línea, y % defectuoso ponderado por línea | 9 celdas |
 | Pedidos, ingreso, costo y margen por estado de entrega (112 pedidos) | USD 141.841,43 de margen |
 | Cantidades, línea, clasificación y % defectuosos, fila por fila | 290 de 290 |
+
+¹ Coinciden porque Python aplica a 3 corridas de marzo el mismo turno que el Excel, y ese
+turno es una inferencia. Ver la sección siguiente.
+
+### Turnos de marzo: coinciden por inferencia, no por dato
+
+Los registros 8, 25 y 36 llegan **sin turno**, y en el repo no hay una confirmación escrita
+del supervisor (para abril-mayo sí la hay). El Excel original les asignó Mañana, Tarde y
+Noche sin comentario. Python aplica esa misma asignación, que se **infirió** de los
+checkpoints de la guía del dashboard de la clase: de las 27 asignaciones posibles, es la
+única que reproduce el paro promedio por turno que la guía espera (15,3 / 12,3 / 15,3 min).
+
+Es una inferencia sobre lo que el curso asumió, no un dato de la fila. Sin ella, esas 3
+corridas quedarían como "turno no registrado" y la producción por turno de marzo diferiría
+del Excel en 895 unidades (Mañana 273, Tarde 400, Noche 222). La asignación está en
+[`data/manual/turno_overrides.csv`](data/manual/turno_overrides.csv) con `Tipo = inferido`,
+y el reporte de calidad la cuenta aparte.
+
+### Diferencias que se mantienen
 
 **No coinciden**, y el test afirma la diferencia exacta:
 
@@ -89,13 +110,13 @@ pip install -e ".[dev]"
 
 python -m src.cli       # limpia los dos archivos, muestra el reporte y escribe data/processed/
 python -m src.sql_load  # crea la base SQLite y exporta las vistas a CSV
-pytest                  # 108 tests, incluida la prueba de consistencia
+pytest                  # 116 tests, incluida la prueba de consistencia
 ruff check . && mypy src
 ```
 
 Para abrir los entregables: los `.xlsx` de `entregables/excel/` necesitan Excel 365 (usan
-matrices dinámicas) y los `.pbix` de `entregables/powerbi/` necesitan Power BI Desktop en
-Windows.
+matrices dinámicas). Los `.pbix` no están en el repo porque guardan por dentro la ruta de
+OneDrive institucional; los dashboards se documentan en [docs/powerbi.md](docs/powerbi.md).
 
 ## Mi rol y limitaciones
 
@@ -108,5 +129,7 @@ comprobar los resultados del Excel. Los datos crudos y el enunciado son del curs
 - **Promedios sin ponderar** en algunas tablas dinámicas y en una matriz del dashboard;
   las vistas SQL incluyen el % ponderado por volumen.
 - **Caso académico:** datos de un ejercicio de clase, no de una empresa real.
+- **3 turnos de marzo son una inferencia**, no un dato: se dedujeron de los checkpoints de
+  la guía de la clase porque no hay confirmación escrita del supervisor.
 - **3 fechas de abril-mayo siguen sin resolver** porque no hay respaldo para decidirlas.
 - **Los pedidos de marzo** no se pueden recalcular: su hoja cruda no está en el repo.

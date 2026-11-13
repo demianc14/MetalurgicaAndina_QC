@@ -279,9 +279,11 @@ def normalize_turno(raw: object) -> str:
 def load_turno_overrides(path: Path = TURNO_OVERRIDES_PATH) -> dict[int, str]:
     """Lee data/manual/turno_overrides.csv si existe; {} si no.
 
-    Mismo patrón que las fechas: un Turno vacío no se adivina, pero si hay
-    una confirmación documentada (columna `Fuente`), se aplica por
-    ID_Registro. Sin archivo, o sin fila para ese ID, el turno queda como
+    Mismo patrón que las fechas: un Turno vacío no se rellena con el turno
+    más común. Solo se llena si hay una fila documentada para ese
+    ID_Registro, con su respaldo en las columnas `Tipo` y `Fuente`
+    ("confirmado_supervisor" o "inferido", ver `load_turnos_inferidos`).
+    Sin archivo, o sin fila para ese ID, el turno queda como
     'turno no registrado'.
     """
     if not path.exists():
@@ -289,8 +291,21 @@ def load_turno_overrides(path: Path = TURNO_OVERRIDES_PATH) -> dict[int, str]:
     df = pd.read_csv(path, dtype={"ID_Registro": int})
     return {
         int(idr): normalize_turno(turno)
-        for idr, turno in zip(df["ID_Registro"], df["Turno_Confirmado"])
+        for idr, turno in zip(df["ID_Registro"], df["Turno_Asignado"])
     }
+
+
+def load_turnos_inferidos(path: Path = TURNO_OVERRIDES_PATH) -> set[int]:
+    """IDs cuyo turno en turno_overrides.csv es una inferencia, no un dato.
+
+    "inferido" = el turno no viene en la fila ni hay confirmación escrita;
+    se dedujo de otra evidencia (ver la columna `Fuente`). El reporte de
+    calidad los cuenta aparte para que no pasen por datos confirmados.
+    """
+    if not path.exists():
+        return set()
+    df = pd.read_csv(path, dtype={"ID_Registro": int})
+    return {int(i) for i in df.loc[df["Tipo"] == "inferido", "ID_Registro"]}
 
 
 def resolve_turnos(
@@ -362,7 +377,10 @@ class DataQualityReport:
     fechas_ambiguas_sin_resolver: pd.DataFrame
     turnos_no_registrados: pd.DataFrame
     paros_faltantes: pd.DataFrame
+    # Turnos vacíos llenados desde turno_overrides.csv (confirmados + inferidos).
     n_turnos_confirmados: int = 0
+    # De esos, cuántos son inferencia y no confirmación escrita.
+    n_turnos_inferidos: int = 0
     n_sku_normalizados: int = 0
 
     def resumen(self) -> str:
@@ -374,8 +392,10 @@ class DataQualityReport:
             + ("  (ver data/manual/date_overrides_template.csv)"
                if len(self.fechas_ambiguas_sin_resolver) else ""),
             f"SKU con espacios normalizados: {self.n_sku_normalizados}",
-            f"Turnos vacíos confirmados:     {self.n_turnos_confirmados}"
+            f"Turnos vacíos llenados:        {self.n_turnos_confirmados}"
             "  (data/manual/turno_overrides.csv)",
+            f"  confirmados por supervisor:  {self.n_turnos_confirmados - self.n_turnos_inferidos}",
+            f"  inferidos, no son dato:      {self.n_turnos_inferidos}",
             f"Turnos no registrados:         {len(self.turnos_no_registrados)}",
             f"Tiempo_Paro_Min faltante:      {len(self.paros_faltantes)}",
         ])
@@ -422,6 +442,9 @@ def transform(
         turnos_no_registrados=turnos_no_registrados,
         paros_faltantes=paros_faltantes,
         n_turnos_confirmados=n_turnos_confirmados,
+        n_turnos_inferidos=int(
+            (deduped["Turno"].isna() & deduped["ID_Registro"].isin(load_turnos_inferidos())).sum()
+        ),
         n_sku_normalizados=int((deduped["SKU"].astype(str) != out["SKU"]).sum()),
     )
     return out, report

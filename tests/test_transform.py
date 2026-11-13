@@ -15,6 +15,7 @@ from src.etl.transform import (
     is_slash_ambiguous,
     load_date_overrides,
     load_turno_overrides,
+    load_turnos_inferidos,
     normalize_linea_produccion,
     normalize_sku,
     normalize_turno,
@@ -285,3 +286,15 @@ def test_transform_abril_mayo_sobre_dataset_real():
     assert sorted(report.fechas_ambiguas_sin_resolver["ID_Registro"]) == [2175, 2178, 2179]
     meses = {f.month for f in cleaned["Fecha"] if f is not None}
     assert meses == {4, 5}
+
+
+def test_reporte_separa_turnos_inferidos_de_confirmados():
+    """Los 3 turnos de marzo se infirieron (Tipo = inferido); los 6 de
+    abril-mayo los confirmó el supervisor. El reporte no los mezcla."""
+    assert load_turnos_inferidos() == {8, 25, 36}
+    _, marzo = transform(extract()[0])
+    raw_abr_may, _ = extract_dataset(ABR_MAY)
+    _, abr_may = transform(raw_abr_may, meses_validos=ABR_MAY.meses_validos)
+    assert (marzo.n_turnos_confirmados, marzo.n_turnos_inferidos) == (3, 3)
+    assert (abr_may.n_turnos_confirmados, abr_may.n_turnos_inferidos) == (6, 0)
+    assert "inferidos, no son dato:      3" in marzo.resumen()
