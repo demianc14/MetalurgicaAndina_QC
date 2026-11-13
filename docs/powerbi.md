@@ -1,13 +1,15 @@
 # Power BI: los dos dashboards
 
-Los `.pbix` no se ven en GitHub ni se abren en macOS. Lo que sigue se extrajo de los
-archivos con código: la definición del reporte (JSON dentro del `.pbix`) y el modelo
-(consultas de Power Query, tablas y columnas, leídos con `pbixray`).
+Los `.pbix` **no están en el repo**: guardan por dentro la ruta de OneDrive institucional
+(con el usuario de la universidad). `.gitignore` los excluye y `tests/test_privacy.py` falla
+si alguno se versiona. Lo que sigue se extrajo de los archivos con código, en local: la
+definición del reporte (JSON dentro del `.pbix`) y el modelo (consultas de Power Query,
+tablas y columnas, leídos con `pbixray`).
 
 | Archivo | Datos | Página |
 |---|---|---|
-| [`Metalurgica Andina Calidad y Paros v1.pbix`](../entregables/powerbi/Metalurgica%20Andina%20Calidad%20y%20Paros%20v1.pbix) | Tres meses (consolidado) | 1 página, 1280 × 720 |
-| [`Cruz_Demian_PQ_Produccion.pbix`](../entregables/powerbi/Cruz_Demian_PQ_Produccion.pbix) | Marzo, limpiado dentro de Power Query | 1 página, 1920 × 1080 |
+| `Metalurgica Andina Calidad y Paros v1.pbix` | Tres meses (consolidado) | 1 página, 1280 × 720 |
+| `Cruz_Demian_PQ_Produccion.pbix` | Marzo, limpiado dentro de Power Query | 1 página, 1920 × 1080 |
 
 > `TODO(demian)`: exportar desde Power BI Desktop (Archivo → Exportar → PDF) y guardar una
 > captura de cada página en `docs/img/powerbi_calidad_paros.png` y
@@ -87,7 +89,7 @@ la tabla sucia y hace toda la limpieza en 37 pasos; el código M completo está 
 | Detectar el formato de fecha | `Table.AddColumn` con `Text.Contains` | `classify_date_format` |
 | Resolver fechas con barras con el rango de meses válido; si no se puede, `null` y "REVISAR CON SUPERVISOR" | `#date`, `Date.FromText` con `Culture = "en-US"` | `parse_date(..., meses_validos)` |
 | Quitar duplicados exactos | `Table.Distinct` | `deduplicate_exact` |
-| Llenar turnos vacíos con la tabla `Correcciones_Turno` | `Table.NestedJoin` (izquierda) | `resolve_turnos` + `data/manual/turno_overrides.csv` |
+| Llenar turnos vacíos con la tabla `Correcciones_Turno` (su contenido no está en el repo) | `Table.NestedJoin` (izquierda) | `resolve_turnos` + `data/manual/turno_overrides.csv` (los 3 de marzo, inferidos) |
 | Cruzar con el catálogo | `Table.NestedJoin` + `Table.ExpandTableColumn` | `join_con_catalogo` |
 | Costo total y % defectuosas | columnas calculadas | `compute_financials` |
 | Clasificación y turno problemático | columnas condicionales | `classify` |
@@ -174,8 +176,9 @@ erDiagram
 Todas las relaciones son de uno a varios. `fact_produccion.fecha` admite nulos: son las
 3 corridas con fecha ambigua pendiente de supervisor.
 
-## Antes de publicar
+## Privacidad
 
-- Los dos `.pbix` guardan por dentro la URL de la cuenta de OneDrive de la universidad
-  (incluye el usuario institucional). En estos documentos se reemplazó por `<OneDrive>`,
-  pero sigue dentro de los archivos. Decide si eso te parece bien antes de subirlos.
+- Los `.pbix` se quedan fuera del repo (ver arriba). Para mostrarlos: exportar PDF y
+  capturas, que no llevan la ruta de OneDrive.
+- En el código de Power Query de [`power_query/`](power_query/) la URL se reemplazó por
+  `<OneDrive>`.

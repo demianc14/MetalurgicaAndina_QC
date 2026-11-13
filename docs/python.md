@@ -42,17 +42,21 @@ decidirlas, así que siguen pendientes.
 
 ## Turnos vacíos
 
-Un turno vacío no se rellena con el más común. Si hay una confirmación documentada, se
-aplica por `ID_Registro` desde `data/manual/turno_overrides.csv`, que tiene una columna
-`Fuente`. Un override nunca pisa un turno que sí venía registrado.
+Un turno vacío no se rellena con el más común. Solo se llena si hay una fila para ese
+`ID_Registro` en `data/manual/turno_overrides.csv`, que dice qué respaldo tiene: la columna
+`Tipo` (`confirmado_supervisor` o `inferido`) y la columna `Fuente`. Un override nunca pisa
+un turno que sí venía registrado, y el reporte de calidad cuenta aparte los inferidos.
 
 - **Abril-mayo:** los 6 turnos vacíos están confirmados por el supervisor en la hoja
   `Instrucciones` del archivo. Se aplican.
-- **Marzo:** 3 filas (registros 8, 25 y 36) llegan sin turno. El ejercicio de Power Query
-  las llena con la tabla `Correcciones_Turno`, y el Excel original las tiene como Mañana,
-  Tarde y Noche. Esa asignación está comprobada: el checkpoint de paro promedio por turno
-  de la guía del dashboard (15,3 / 12,3 / 15,3) solo se cumple con ella
-  (`test_p3_paro_promedio_por_turno`). Se aplican.
+- **Marzo:** 3 filas (registros 8, 25 y 36) llegan sin turno y **no hay confirmación
+  escrita** en el repo. El Excel original les asignó Mañana, Tarde y Noche sin comentario.
+  El ejercicio de Power Query usa una tabla `Correcciones_Turno`, pero su contenido no está
+  en el repo. La asignación se **infirió** de la guía del dashboard de la clase: de las 27
+  combinaciones posibles, Mañana/Tarde/Noche es la única que reproduce su checkpoint de
+  paro promedio por turno (15,3 / 12,3 / 15,3 min; `test_p3_paro_promedio_por_turno`).
+  Se aplica con `Tipo = inferido`: es lo que el curso asumió, no un dato de la fila. Sin
+  ella, esas 3 corridas quedarían como "turno no registrado".
 
 ## Paros vacíos
 
@@ -94,6 +98,8 @@ Escribe `data/processed/metalurgica.db` y un CSV por vista en `data/processed/vi
 
 ## Limitaciones
 
+- **3 turnos de marzo son una inferencia**, no un dato (ver "Turnos vacíos"). Los totales
+  por turno de marzo coinciden con el Excel por eso, no porque la fila lo diga.
 - **Dataset chico:** 290 corridas en tres meses. Sirve para mostrar método, no para
   sacar conclusiones estadísticas.
 - **Promedios sin ponderar:** `Tasa_defectuosos_promedio` por línea es un promedio simple
