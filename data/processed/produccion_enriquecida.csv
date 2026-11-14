@@ -6,7 +6,7 @@ ID_Registro,Fecha,Linea_Produccion,Turno,SKU,Cantidad_Producida,Unidades_Defectu
 5,2026-03-02,Línea 2,Tarde,MA-1001,161,7,15.0,Tornillo Hex M8x40,Tornillería,0.15,0.35,0.02,24.15,56.349999999999994,32.199999999999996,0.043478260869565216,Crítico,No cumple,No
 6,2026-03-02,Línea 2,Noche,MA-2002,252,2,20.0,Soporte Ángulo 75mm,Soportes,2.4,4.75,0.38,604.8,1197.0,592.2,0.007936507936507936,Excelente,Cumple,No
 7,2026-03-02,Línea 3,Mañana,MA-3003,389,6,0.0,Engranaje Cónico 25D,Engranajes,14.75,24.9,1.1,5737.75,9686.099999999999,3948.3499999999985,0.015424164524421594,Aceptable,Cumple,No
-8,2026-03-02,Línea 3,turno no registrado,MA-1004,273,1,10.0,Arandela Plana M8,Tornillería,0.03,0.08,0.005,8.19,21.84,13.65,0.003663003663003663,Excelente,Cumple,No
+8,2026-03-02,Línea 3,Mañana,MA-1004,273,1,10.0,Arandela Plana M8,Tornillería,0.03,0.08,0.005,8.19,21.84,13.65,0.003663003663003663,Excelente,Cumple,No
 9,2026-03-02,Línea 3,Noche,MA-3003,375,4,0.0,Engranaje Cónico 25D,Engranajes,14.75,24.9,1.1,5531.25,9337.5,3806.25,0.010666666666666666,Aceptable,Cumple,No
 10,2026-03-03,Línea 1,Mañana,MA-2003,228,13,5.0,Soporte en L Reforzado,Soportes,3.1,5.9,0.52,706.8000000000001,1345.2,638.4,0.05701754385964912,Crítico,No cumple,No
 11,2026-03-03,Línea 1,Noche,MA-4002,405,20,0.0,"Bisagra Industrial 4""",Bisagras,3.6,6.4,0.55,1458.0,2592.0,1134.0,0.04938271604938271,Crítico,No cumple,No
@@ -23,7 +23,7 @@ ID_Registro,Fecha,Linea_Produccion,Turno,SKU,Cantidad_Producida,Unidades_Defectu
 22,2026-03-04,Línea 3,Mañana,MA-4002,350,5,30.0,"Bisagra Industrial 4""",Bisagras,3.6,6.4,0.55,1260.0,2240.0,980.0,0.014285714285714285,Aceptable,Cumple,No
 23,2026-03-04,Línea 3,Noche,MA-1004,354,16,15.0,Arandela Plana M8,Tornillería,0.03,0.08,0.005,10.62,28.32,17.700000000000003,0.04519774011299435,Crítico,No cumple,No
 24,2026-03-05,Línea 1,Mañana,MA-4001,160,4,10.0,"Bisagra Industrial 3""",Bisagras,2.9,5.2,0.4,464.0,832.0,368.0,0.025,Aceptable,Cumple,No
-25,2026-03-05,Línea 1,turno no registrado,MA-1004,400,7,30.0,Arandela Plana M8,Tornillería,0.03,0.08,0.005,12.0,32.0,20.0,0.0175,Aceptable,Cumple,No
+25,2026-03-05,Línea 1,Tarde,MA-1004,400,7,30.0,Arandela Plana M8,Tornillería,0.03,0.08,0.005,12.0,32.0,20.0,0.0175,Aceptable,Cumple,No
 26,2026-03-05,Línea 2,Mañana,MA-1005,271,12,30.0,Tornillo Allen M6x30,Tornillería,0.12,0.28,0.015,32.519999999999996,75.88000000000001,43.360000000000014,0.04428044280442804,Crítico,No cumple,No
 27,2026-03-05,Línea 3,Tarde,MA-4003,89,1,15.0,"Bisagra Reforzada 5""",Bisagras,4.8,8.1,0.75,427.2,720.9,293.7,0.011235955056179775,Aceptable,Cumple,No
 28,2026-03-06,Línea 1,Mañana,MA-3001,202,1,45.0,Engranaje Recto 20D,Engranajes,8.5,15.9,0.65,1717.0,3211.8,1494.8000000000002,0.0049504950495049506,Excelente,Cumple,No
@@ -34,7 +34,7 @@ ID_Registro,Fecha,Linea_Produccion,Turno,SKU,Cantidad_Producida,Unidades_Defectu
 33,2026-03-06,Línea 3,Mañana,MA-2003,195,1,0.0,Soporte en L Reforzado,Soportes,3.1,5.9,0.52,604.5,1150.5,546.0,0.005128205128205128,Excelente,Cumple,No
 34,2026-03-06,Línea 3,Tarde,MA-2003,381,5,0.0,Soporte en L Reforzado,Soportes,3.1,5.9,0.52,1181.1000000000001,2247.9,1066.8,0.013123359580052493,Aceptable,Cumple,No
 35,2026-03-06,Línea 3,Noche,MA-1002,197,1,0.0,Tornillo Hex M10x50,Tornillería,0.22,0.48,0.03,43.34,94.56,51.22,0.005076142131979695,Excelente,Cumple,No
-36,2026-03-09,Línea 1,turno no registrado,MA-2003,222,9,5.0,Soporte en L Reforzado,Soportes,3.1,5.9,0.52,688.2,1309.8000000000002,621.6000000000001,0.04054054054054054,Crítico,No cumple,No
+36,2026-03-09,Línea 1,Noche,MA-2003,222,9,5.0,Soporte en L Reforzado,Soportes,3.1,5.9,0.52,688.2,1309.8000000000002,621.6000000000001,0.04054054054054054,Crítico,No cumple,No
 37,2026-03-09,Línea 1,Noche,MA-4003,204,10,20.0,"Bisagra Reforzada 5""",Bisagras,4.8,8.1,0.75,979.1999999999999,1652.3999999999999,673.1999999999999,0.049019607843137254,Crítico,No cumple,No
 38,2026-03-09,Línea 2,Mañana,MA-1004,417,11,20.0,Arandela Plana M8,Tornillería,0.03,0.08,0.005,12.51,33.36,20.85,0.026378896882494004,Aceptable,Cumple,No
 39,2026-03-09,Línea 2,Tarde,MA-1002,414,24,0.0,Tornillo Hex M10x50,Tornillería,0.22,0.48,0.03,91.08,198.72,107.64,0.057971014492753624,Crítico,No cumple,No

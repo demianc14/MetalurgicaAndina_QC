@@ -26,6 +26,7 @@ import pandas as pd
 MANUAL_DIR = Path("data/manual")
 DATE_OVERRIDES_TEMPLATE_PATH = MANUAL_DIR / "date_overrides_template.csv"
 DATE_OVERRIDES_PATH = MANUAL_DIR / "date_overrides.csv"
+TURNO_OVERRIDES_PATH = MANUAL_DIR / "turno_overrides.csv"
 
 TURNO_NO_REGISTRADO = "turno no registrado"
 
@@ -42,11 +43,13 @@ _ISO_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _MMM_RE = re.compile(r"^(\d{2})-([A-Za-z]{3})-(\d{2})$")
 _SLASH_RE = re.compile(r"^(\d{1,2})/(\d{1,2})/(\d{4})$")
 
-# Solo "Mar" aparece en el dataset real, pero se mapean los 12 para no
-# fallar silenciosamente ante otro mes que no vimos en la muestra.
-_MESES_ES = {
+# Se mapean los 12 meses en español y en inglés: marzo usa "Mar" (igual en
+# ambos idiomas), pero abril-mayo trae "Apr" (inglés). Mapear todos evita
+# fallar silenciosamente ante un mes que no vimos en la muestra.
+_MESES_ABREV = {
     "ene": 1, "feb": 2, "mar": 3, "abr": 4, "may": 5, "jun": 6,
     "jul": 7, "ago": 8, "sep": 9, "oct": 10, "nov": 11, "dic": 12,
+    "jan": 1, "apr": 4, "aug": 8, "dec": 12,
 }
 
 
@@ -67,22 +70,45 @@ def classify_date_format(raw: str) -> DateFormat:
     raise ValueError(f"Formato de fecha no reconocido: {raw!r}")
 
 
-def is_slash_ambiguous(raw: str) -> bool:
+def _resolve_slash(a: int, b: int, meses_validos: frozenset[int] | None) -> int | None:
+    """Devuelve el MES de una fecha slash "a/b/yyyy", o None si es ambigua.
+
+    Reglas, de la más fuerte a la más débil:
+      1. a == b ("05/05/2026"): día y mes coinciden, no hay nada que decidir.
+      2. Uno de los dos es >12: ese solo puede ser el día.
+      3. `meses_validos` (contexto de negocio documentado: el archivo solo
+         contiene esos meses): si exactamente UNO de los dos números es un
+         mes válido, ese es el mes. Es la misma técnica que la fórmula del
+         Excel (Sesión 2) y el paso "Fecha_Limpia" de Power Query.
+      4. Cualquier otro caso es genuinamente ambiguo: None, no se adivina.
+    """
+    if a == b:
+        return a
+    if a > 12 or b > 12:
+        return b if a > 12 else a
+    if meses_validos is not None:
+        a_ok, b_ok = a in meses_validos, b in meses_validos
+        if a_ok != b_ok:
+            return a if a_ok else b
+    return None
+
+
+def is_slash_ambiguous(raw: str, meses_validos: frozenset[int] | None = None) -> bool:
     """True si una fecha en formato slash no se puede resolver sin contexto.
 
     Si uno de los dos primeros números es >12, ese solo puede ser el día
     (ningún mes pasa de 12): no es ambiguo. Si AMBOS son <=12, p.ej.
     "03/02/2026", podría ser 3-feb (MM/DD) o 2-mar (DD/MM) — genuinamente
-    ambiguo. No se adivina cuál convención aplica esa fila.
+    ambiguo salvo que `meses_validos` descarte una de las dos lecturas
+    (ver `_resolve_slash`). No se adivina cuál convención aplica esa fila.
     """
     m = _SLASH_RE.match(raw.strip())
     if not m:
         raise ValueError(f"No es una fecha en formato slash: {raw!r}")
-    a, b = int(m.group(1)), int(m.group(2))
-    return a <= 12 and b <= 12
+    return _resolve_slash(int(m.group(1)), int(m.group(2)), meses_validos) is None
 
 
-def parse_date(raw: str) -> date | None:
+def parse_date(raw: str, meses_validos: frozenset[int] | None = None) -> date | None:
     """Parsea una fecha cruda a `date`, o None si es slash y ambigua.
 
     None es intencional, no un error: la resolución de fechas ambiguas
@@ -99,7 +125,7 @@ def parse_date(raw: str) -> date | None:
         m = _MMM_RE.match(raw)
         assert m is not None
         day, mes_abbr, yy = m.group(1), m.group(2), m.group(3)
-        mes = _MESES_ES.get(mes_abbr.lower())
+        mes = _MESES_ABREV.get(mes_abbr.lower())
         if mes is None:
             raise ValueError(f"Mes no reconocido en fecha 'DD-Mon-YY': {raw!r}")
         return date(2000 + int(yy), mes, int(day))
@@ -108,13 +134,16 @@ def parse_date(raw: str) -> date | None:
     m = _SLASH_RE.match(raw)
     assert m is not None
     a, b, year = int(m.group(1)), int(m.group(2)), int(m.group(3))
-    if a <= 12 and b <= 12:
+    month = _resolve_slash(a, b, meses_validos)
+    if month is None:
         return None
-    day, month = (a, b) if a > 12 else (b, a)
+    day = b if month == a else a
     return date(year, month, day)
 
 
-def find_ambiguous_slash_dates(df: pd.DataFrame) -> pd.DataFrame:
+def find_ambiguous_slash_dates(
+    df: pd.DataFrame, meses_validos: frozenset[int] | None = None
+) -> pd.DataFrame:
     """Devuelve las filas (ID_Registro, Fecha) cuya fecha slash es ambigua.
 
     Insumo directo para `build_date_overrides_template`: es el conjunto de
@@ -123,7 +152,7 @@ def find_ambiguous_slash_dates(df: pd.DataFrame) -> pd.DataFrame:
     rows = []
     for idr, raw in zip(df["ID_Registro"], df["Fecha"]):
         raw = str(raw).strip()
-        if classify_date_format(raw) == "slash" and is_slash_ambiguous(raw):
+        if classify_date_format(raw) == "slash" and is_slash_ambiguous(raw, meses_validos):
             rows.append({"ID_Registro": idr, "Fecha": raw})
     return pd.DataFrame(rows, columns=["ID_Registro", "Fecha"])
 
@@ -167,7 +196,9 @@ def load_date_overrides(path: Path = DATE_OVERRIDES_PATH) -> dict[int, date]:
 
 
 def resolve_dates(
-    df: pd.DataFrame, overrides: dict[int, date] | None = None
+    df: pd.DataFrame,
+    overrides: dict[int, date] | None = None,
+    meses_validos: frozenset[int] | None = None,
 ) -> tuple[pd.Series, pd.DataFrame]:
     """Resuelve toda la columna Fecha a `date`, aplicando overrides a las filas ambiguas.
 
@@ -181,7 +212,7 @@ def resolve_dates(
     unresolved_rows = []
     for idr, raw in zip(df["ID_Registro"], df["Fecha"]):
         raw_str = str(raw).strip()
-        parsed = parse_date(raw_str)
+        parsed = parse_date(raw_str, meses_validos)
         if parsed is None:
             parsed = overrides.get(int(idr))
         if parsed is None:
@@ -245,6 +276,58 @@ def normalize_turno(raw: object) -> str:
     return canonical
 
 
+def load_turno_overrides(path: Path = TURNO_OVERRIDES_PATH) -> dict[int, str]:
+    """Lee data/manual/turno_overrides.csv si existe; {} si no.
+
+    Mismo patrón que las fechas: un Turno vacío no se rellena con el turno
+    más común. Solo se llena si hay una fila documentada para ese
+    ID_Registro, con su respaldo en las columnas `Tipo` y `Fuente`
+    ("confirmado_supervisor" o "inferido", ver `load_turnos_inferidos`).
+    Sin archivo, o sin fila para ese ID, el turno queda como
+    'turno no registrado'.
+    """
+    if not path.exists():
+        return {}
+    df = pd.read_csv(path, dtype={"ID_Registro": int})
+    return {
+        int(idr): normalize_turno(turno)
+        for idr, turno in zip(df["ID_Registro"], df["Turno_Asignado"])
+    }
+
+
+def load_turnos_inferidos(path: Path = TURNO_OVERRIDES_PATH) -> set[int]:
+    """IDs cuyo turno en turno_overrides.csv es una inferencia, no un dato.
+
+    "inferido" = el turno no viene en la fila ni hay confirmación escrita;
+    se dedujo de otra evidencia (ver la columna `Fuente`). El reporte de
+    calidad los cuenta aparte para que no pasen por datos confirmados.
+    """
+    if not path.exists():
+        return set()
+    df = pd.read_csv(path, dtype={"ID_Registro": int})
+    return {int(i) for i in df.loc[df["Tipo"] == "inferido", "ID_Registro"]}
+
+
+def resolve_turnos(
+    df: pd.DataFrame, overrides: dict[int, str] | None = None
+) -> tuple[pd.Series, int]:
+    """Normaliza Turno y aplica confirmaciones a las filas vacías.
+
+    Devuelve (serie_turnos, n_confirmados). Un override NUNCA pisa un
+    turno que sí venía registrado: solo llena los vacíos.
+    """
+    overrides = overrides or {}
+    turnos: list[str] = []
+    n_confirmados = 0
+    for idr, raw in zip(df["ID_Registro"], df["Turno"]):
+        turno = normalize_turno(raw)
+        if turno == TURNO_NO_REGISTRADO and int(idr) in overrides:
+            turno = overrides[int(idr)]
+            n_confirmados += 1
+        turnos.append(turno)
+    return pd.Series(turnos, index=df.index, name="Turno"), n_confirmados
+
+
 # ---------------------------------------------------------------------------
 # Tiempo_Paro_Min: faltantes se dejan como NaN explícito.
 # ---------------------------------------------------------------------------
@@ -294,6 +377,11 @@ class DataQualityReport:
     fechas_ambiguas_sin_resolver: pd.DataFrame
     turnos_no_registrados: pd.DataFrame
     paros_faltantes: pd.DataFrame
+    # Turnos vacíos llenados desde turno_overrides.csv (confirmados + inferidos).
+    n_turnos_confirmados: int = 0
+    # De esos, cuántos son inferencia y no confirmación escrita.
+    n_turnos_inferidos: int = 0
+    n_sku_normalizados: int = 0
 
     def resumen(self) -> str:
         return "\n".join([
@@ -303,30 +391,41 @@ class DataQualityReport:
             f"Fechas ambiguas sin resolver:  {len(self.fechas_ambiguas_sin_resolver)}"
             + ("  (ver data/manual/date_overrides_template.csv)"
                if len(self.fechas_ambiguas_sin_resolver) else ""),
+            f"SKU con espacios normalizados: {self.n_sku_normalizados}",
+            f"Turnos vacíos llenados:        {self.n_turnos_confirmados}"
+            "  (data/manual/turno_overrides.csv)",
+            f"  confirmados por supervisor:  {self.n_turnos_confirmados - self.n_turnos_inferidos}",
+            f"  inferidos, no son dato:      {self.n_turnos_inferidos}",
             f"Turnos no registrados:         {len(self.turnos_no_registrados)}",
             f"Tiempo_Paro_Min faltante:      {len(self.paros_faltantes)}",
         ])
 
 
-def transform(df: pd.DataFrame) -> tuple[pd.DataFrame, DataQualityReport]:
+def transform(
+    df: pd.DataFrame, meses_validos: frozenset[int] | None = None
+) -> tuple[pd.DataFrame, DataQualityReport]:
     """Limpia "Producción (2)" y arma el reporte de calidad de datos.
 
     Orden deliberado: dedupe primero, para no contar fechas ambiguas o
     turnos no registrados dos veces en filas que son puro ruido de captura
     duplicada. Después fechas y normalización categórica, que son
     independientes entre sí.
+
+    `meses_validos` es contexto de negocio opcional para las fechas slash
+    (ver `_resolve_slash`). Sin él, el comportamiento es el original.
     """
     n_filas_originales = len(df)
     deduped, n_duplicados = deduplicate_exact(df)
 
     overrides = load_date_overrides()
-    fechas, fechas_ambiguas = resolve_dates(deduped, overrides)
+    fechas, fechas_ambiguas = resolve_dates(deduped, overrides, meses_validos)
+    turnos, n_turnos_confirmados = resolve_turnos(deduped, load_turno_overrides())
 
     out = deduped.copy()
     out["Fecha"] = fechas
     out["SKU"] = deduped["SKU"].apply(normalize_sku)
     out["Linea_Produccion"] = deduped["Linea_Produccion"].apply(normalize_linea_produccion)
-    out["Turno"] = deduped["Turno"].apply(normalize_turno)
+    out["Turno"] = turnos
     out["Tiempo_Paro_Min"] = clean_tiempo_paro_min(deduped["Tiempo_Paro_Min"])
 
     turnos_no_registrados = out.loc[
@@ -342,6 +441,11 @@ def transform(df: pd.DataFrame) -> tuple[pd.DataFrame, DataQualityReport]:
         fechas_ambiguas_sin_resolver=fechas_ambiguas,
         turnos_no_registrados=turnos_no_registrados,
         paros_faltantes=paros_faltantes,
+        n_turnos_confirmados=n_turnos_confirmados,
+        n_turnos_inferidos=int(
+            (deduped["Turno"].isna() & deduped["ID_Registro"].isin(load_turnos_inferidos())).sum()
+        ),
+        n_sku_normalizados=int((deduped["SKU"].astype(str) != out["SKU"]).sum()),
     )
     return out, report
 

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "metalurgica-andina-qc"
 version = "0.1.0"
-description = "Pipeline de limpieza y análisis de calidad para datos de producción industrial con formatos inconsistentes, basado en un caso real de la clase IIN2002 (USFQ)"
+description = "Control de calidad de producción industrial resuelto con Excel, Power BI y Python: ETL en pandas, vistas SQL y prueba de consistencia entre las tres herramientas (caso IIN2002, USFQ)"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [

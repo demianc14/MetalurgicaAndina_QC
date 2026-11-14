@@ -9,3 +9,12 @@ __pycache__/
 .ipynb_checkpoints/
 dist/
 build/
+.ruff_cache/
+.DS_Store
+# Base SQLite generada por `python -m src.sql_load` (reproducible)
+data/processed/*.db
+# Dashboards de Power BI: guardan por dentro la URL de OneDrive institucional.
+# Se publican como PDF y capturas, no como .pbix.
+*.pbix
+# Guía del profesor (material del curso, no se redistribuye).
+IIN2002_PQ_Dashboards*

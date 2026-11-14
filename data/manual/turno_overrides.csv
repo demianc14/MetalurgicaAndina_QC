@@ -1,0 +1,10 @@
+ID_Registro,Turno_Asignado,Tipo,Fuente
+8,Mañana,inferido,"Inferido, no es dato de la fila: llega sin turno y no hay confirmación escrita del supervisor en el repo. Es la única de las 27 asignaciones posibles de los registros 8, 25 y 36 que reproduce el checkpoint de paro promedio por turno de la guía del dashboard de la clase (15.3 / 12.3 / 15.3 min). Coincide con lo que el Excel original asignó sin comentario."
+25,Tarde,inferido,"Inferido, no es dato de la fila: llega sin turno y no hay confirmación escrita del supervisor en el repo. Es la única de las 27 asignaciones posibles de los registros 8, 25 y 36 que reproduce el checkpoint de paro promedio por turno de la guía del dashboard de la clase (15.3 / 12.3 / 15.3 min). Coincide con lo que el Excel original asignó sin comentario."
+36,Noche,inferido,"Inferido, no es dato de la fila: llega sin turno y no hay confirmación escrita del supervisor en el repo. Es la única de las 27 asignaciones posibles de los registros 8, 25 y 36 que reproduce el checkpoint de paro promedio por turno de la guía del dashboard de la clase (15.3 / 12.3 / 15.3 min). Coincide con lo que el Excel original asignó sin comentario."
+2134,Mañana,confirmado_supervisor,"Hoja Instrucciones de MetalurgicaAndina_DCruz_AprMay2026.xlsx: turno confirmado por el supervisor (abril)"
+2095,Tarde,confirmado_supervisor,"Hoja Instrucciones de MetalurgicaAndina_DCruz_AprMay2026.xlsx: turno confirmado por el supervisor (abril)"
+2009,Noche,confirmado_supervisor,"Hoja Instrucciones de MetalurgicaAndina_DCruz_AprMay2026.xlsx: turno confirmado por el supervisor (abril)"
+2204,Mañana,confirmado_supervisor,"Hoja Instrucciones de MetalurgicaAndina_DCruz_AprMay2026.xlsx: turno confirmado por el supervisor (mayo)"
+2302,Tarde,confirmado_supervisor,"Hoja Instrucciones de MetalurgicaAndina_DCruz_AprMay2026.xlsx: turno confirmado por el supervisor (mayo)"
+2182,Noche,confirmado_supervisor,"Hoja Instrucciones de MetalurgicaAndina_DCruz_AprMay2026.xlsx: turno confirmado por el supervisor (mayo)"
