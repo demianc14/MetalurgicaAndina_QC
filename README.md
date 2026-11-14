@@ -16,7 +16,7 @@ cada diferencia.
 |---|---|---|
 | **Excel** | Limpieza con fórmulas (`XLOOKUP`, `IFS`, `COUNTIFS`, `SUMIFS`, `FILTER`, `SORT`, `UNIQUE`, `GETPIVOTDATA`), 13 tablas dinámicas, umbrales en hojas de parámetros y un dashboard | [docs/excel.md](docs/excel.md) · [entregables/excel/](entregables/excel/) |
 | **Power BI** | Dos dashboards: calidad y paros de los tres meses, y un ejercicio donde toda la limpieza se hace en Power Query (37 pasos en M). Un tercero, de tres páginas, está en construcción | [docs/powerbi.md](docs/powerbi.md) (los `.pbix` no se publican) |
-| **Python + SQL** | Pipeline ETL en pandas con reporte de calidad, modelo estrella en SQLite con 10 vistas, 116 tests y CI | [docs/python.md](docs/python.md) · [src/](src/) · [sql/](sql/) |
+| **Python + SQL** | Pipeline ETL en pandas con reporte de calidad, modelo estrella en SQLite con 10 vistas, 122 tests y CI | [docs/python.md](docs/python.md) · [src/](src/) · [sql/](sql/) |
 
 ## Reporte de calidad de datos
 
@@ -110,13 +110,24 @@ pip install -e ".[dev]"
 
 python -m src.cli       # limpia los dos archivos, muestra el reporte y escribe data/processed/
 python -m src.sql_load  # crea la base SQLite y exporta las vistas a CSV
-pytest                  # 116 tests, incluida la prueba de consistencia
+pytest                  # 122 tests, incluida la prueba de consistencia
 ruff check . && mypy src
 ```
 
 Para abrir los entregables: los `.xlsx` de `entregables/excel/` necesitan Excel 365 (usan
 matrices dinámicas). Los `.pbix` no están en el repo porque guardan por dentro la ruta de
 OneDrive institucional; los dashboards se documentan en [docs/powerbi.md](docs/powerbi.md).
+
+**Privacidad.** Un `.xlsx` guarda por dentro quién lo creó y dónde estaba en el disco.
+Antes de versionar un Excel nuevo:
+
+```bash
+python3 scripts/limpiar_metadatos_xlsx.py          # vacía creator, lastModifiedBy, rutas locales y refreshedBy
+python3 scripts/limpiar_metadatos_xlsx.py --check  # solo revisa; sale con 1 si queda algo
+```
+
+`tests/test_privacy.py` falla si un Excel versionado conserva alguno de esos metadatos, si
+se versiona un `.pbix` o si aparece una URL de OneDrive.
 
 ## Mi rol y limitaciones
 
