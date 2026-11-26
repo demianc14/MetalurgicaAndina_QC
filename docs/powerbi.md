@@ -1,143 +1,171 @@
-# Power BI: los dos dashboards
+# Power BI: tres informes
 
-Los `.pbix` **no están en el repo**: guardan por dentro la ruta de OneDrive institucional
-(con el usuario de la universidad). `.gitignore` los excluye y `tests/test_privacy.py` falla
-si alguno se versiona. Lo que sigue se extrajo de los archivos con código, en local: la
-definición del reporte (JSON dentro del `.pbix`) y el modelo (consultas de Power Query,
-tablas y columnas, leídos con `pbixray`).
+Informes hechos para la clase de Power BI IIN2002 (USFQ). Las capturas son de Power BI
+Service y están tal cual en [`img/`](img/). Los `.pbix` **no están en el repo**: guardan
+por dentro la ruta de OneDrive institucional. `.gitignore` los excluye y
+`tests/test_privacy.py` falla si alguno se versiona.
 
-| Archivo | Datos | Página |
+| Informe | Páginas con captura | Filtro de fechas visible |
 |---|---|---|
-| `Metalurgica Andina Calidad y Paros v1.pbix` | Tres meses (consolidado) | 1 página, 1280 × 720 |
-| `Cruz_Demian_PQ_Produccion.pbix` | Marzo, limpiado dentro de Power Query | 1 página, 1920 × 1080 |
+| **D2** Calidad y Paros de Producción | 1 página | Ninguno |
+| **D3** Informe de Producción (ejercicio de Power Query) | Resumen, Producción | Producción: 02/03/2026 a 18/03/2026. Resumen: ninguno |
+| **D4** Informe de Producción | Resumen, Producción, Calidad, Paros y costos | 02/03/2026 a 29/05/2026 |
 
-> `TODO(demian)`: exportar desde Power BI Desktop (Archivo → Exportar → PDF) y guardar una
-> captura de cada página en `docs/img/powerbi_calidad_paros.png` y
-> `docs/img/powerbi_pq_marzo.png`. Sin eso un reclutador no puede ver los dashboards.
+El periodo de cada informe se toma solo del filtro de fechas que se ve en la captura, no
+del nombre del archivo. D1 (pedidos y entregas) queda fuera de este documento.
 
-## 1. Calidad y Paros de Producción (tres meses)
+**De dónde sale cada cifra.**
+- **Power BI:** las cifras se leyeron de las capturas, con el redondeo que muestra cada
+  tarjeta (por ejemplo, "3 mil").
+- **Pipeline:** la columna "Pipeline" sale de estos dos comandos:
+
+```bash
+python -m src.cli > /dev/null          # escribe data/processed/ y las vistas SQL
+python3 scripts/cifras_powerbi.py      # agrega lo que muestran las tarjetas
+```
+
+## D2. Calidad y Paros de Producción
 
 **Pregunta de negocio:** ¿dónde se concentran los defectos y el tiempo de paro: en qué
 línea, turno, categoría y producto?
 
-![Dashboard Calidad y Paros](img/powerbi_calidad_paros.png)
+![D2 Calidad y Paros de Producción](img/D2-calidad-y-paros.jpg)
 
 | Visual | Campos | Qué responde |
 |---|---|---|
-| Tarjeta "Corridas" | Recuento de `ID_Registro` | Cuántas corridas hay en la selección |
-| Tarjeta "Unidades Producidas" | Suma de `Cantidad_Producida` | Volumen |
-| Tarjeta "Unidades Defectuosas" | Suma de `Unidades_Defectuosas` | Defectos en unidades |
-| Tarjeta "Paro (min)" | Suma de `Tiempo_Paro_Min` | Tiempo perdido |
-| Tarjeta "Costo (US $)" | Suma de `Costo_Total` | Costo de lo producido |
-| Columnas agrupadas "Paro (min) por línea y turno" | `línea_Produccion`, `Turno`, suma de paro | Qué combinación línea-turno pierde más tiempo |
+| Tarjetas | Recuento de `ID_Registro`; sumas de `Cantidad_Producida`, `Unidades_Defectuosas`, `Tiempo_Paro_Min` y `Costo_Total` | Volumen, defectos, paro y costo de la selección |
+| Columnas agrupadas "Paro (min) por línea y turno" | `línea_Produccion`, `Turno` | Qué combinación línea-turno pierde más tiempo |
 | Matriz "% Defectuoso promedio por corrida (línea x turno)" | Promedio de `% Defectuosos` | Qué combinación tiene peor calidad |
-| Barras 100 % apiladas "Mezcla de nivel de calidad por categoría" | `Categoria`, `Calidad_3_Niveles`, recuento | Qué categoría tiene más corridas críticas |
-| Barras "Top 5 SKU por unidades defectuosas" | `SKU`, suma de defectuosas, filtro Top N | Qué productos atacar primero |
+| Barras 100 % apiladas "Mezcla de nivel de calidad por categoría" | `Categoria`, `Calidad_3_Niveles` | Qué categoría tiene más corridas críticas |
+| Barras "Top 5 SKU por unidades defectuosas" | `SKU`, filtro Top N | Qué productos atacar primero |
 | Segmentadores | `línea_Produccion`, `Turno`, `Categoria` | Filtran todo lo anterior |
 
-**Modelo:** una sola tabla, `tbl_Prod` (15 columnas), cargada desde un Excel consolidado
-en OneDrive. Además existe la tabla de fechas automática de Power BI
-(`LocalDateTable`, generada por la opción "Fecha y hora automáticas").
+**Modelo:** una sola tabla, `tbl_Prod`, cargada con una consulta de Power Query de 6 líneas
+desde un Excel en OneDrive que no está en el repo. La versión del repo, con la URL
+reemplazada, está en [`power_query/calidad_paros_tbl_Prod.pq`](power_query/calidad_paros_tbl_Prod.pq).
+Su texto no es idéntico al de D2 y no los comparé paso a paso.
 
-**Power Query:** solo tipa las columnas; la limpieza ya venía hecha desde el Excel.
-Código completo en [`power_query/calidad_paros_tbl_Prod.pq`](power_query/calidad_paros_tbl_Prod.pq).
+| Tarjeta | Power BI | Pipeline, tres meses |
+|---|---|---|
+| Corridas | 285 | 290 |
+| Unidades Producidas | 71,2 mil | 73.148 |
+| Unidades Defectuosas | 2,1 mil | 2.162 |
+| Paro (min) | 3,5 mil | 3.790 |
+| Costo (US $) | 317,7 mil | 365.045,29 |
 
-**Cifras que deberían mostrar las tarjetas sin filtros**, según el consolidado del repo
-(`TODO(demian)`: confirmar contra la captura):
+D2 no tiene filtro de fechas visible. Por eso lo comparo con los tres meses del pipeline,
+y ninguna tarjeta coincide (ver [Diferencias](#diferencias)).
 
-| Tarjeta | Valor esperado |
-|---|---|
-| Corridas | 290 |
-| Unidades Producidas | 73.148 |
-| Unidades Defectuosas | 2.162 |
-| Paro (min) | 3.790 |
-| Costo (US $) | 366.882,29 |
+## D3. Informe de Producción (ejercicio de Power Query)
 
-Dos cosas por confirmar al abrir el archivo:
+**Pregunta de negocio:** con los datos limpiados dentro de Power Query, ¿cuánto se produjo,
+cuánto costó y cómo se reparte por línea, turno y categoría?
 
-- El modelo guarda **285** valores distintos de `ID_Registro`, y el consolidado del repo
-  tiene 290 corridas. La fuente del dashboard es otro archivo
-  (`Metalurgica Andina 3 Meses Consolidado.xlsx`, tabla `tbl_Prod`), que no está en el repo.
-  Si la tarjeta "Corridas" no dice 290, ese archivo no es igual al consolidado entregado.
-- El consolidado mezcla `No Cumple` y `No cumple`. Si esa columna se usa en un filtro o
-  leyenda, aparecerán como dos categorías.
+Páginas del informe: Resumen, Producción, Calidad, Paros y Costos, más una página Borrador.
+Hay captura de las dos primeras.
 
-## 2. Ejercicio de Power Query (marzo)
+![D3 Resumen](img/D3-1-resumen.jpg)
 
-**Pregunta de negocio:** con los datos de marzo limpiados dentro de Power BI, ¿cuánto
-costó producir, cuántas unidades salieron defectuosas y cómo se reparten por categoría,
-línea y turno?
+![D3 Producción](img/D3-2-produccion.jpg)
 
-![Dashboard Power Query marzo](img/powerbi_pq_marzo.png)
-
-| Visual | Campos |
-|---|---|
-| Tarjeta | Suma de `Costo_Total_Producido` |
-| Tarjeta | Suma de `Unidades_Defectuosas` |
-| Matriz | `Linea_Produccion` × `Turno`, suma de `Cantidad_Producida` |
-| Tabla | `Clasificación_Calidad`, recuento de `ID_Registro` |
-| Columnas "Unidades defectuosas por categoría" | `Categoria`, suma de defectuosas |
-| Segmentadores | `Categoria`, `Turno` |
-
-**Este archivo es el que demuestra Power Query.** La consulta `Produccion_Limpia` parte de
-la tabla sucia y hace toda la limpieza en 37 pasos; el código M completo está en
+**Modelo:** una sola tabla, `Produccion_Limpia`, armada en Power Query (48 líneas de M).
+La limpieza se explica paso a paso en
 [`power_query/pq_marzo_Produccion_Limpia.pq`](power_query/pq_marzo_Produccion_Limpia.pq).
+Ese texto no es idéntico al de D3 y no los comparé paso a paso.
 
-| Paso de Power Query | Función M | Equivalente en Python |
-|---|---|---|
-| Recortar y capitalizar línea, turno y SKU | `Text.Trim`, `Text.Proper`, `Table.ReplaceValue` | `normalize_linea_produccion`, `normalize_turno`, `normalize_sku` |
-| Detectar el formato de fecha | `Table.AddColumn` con `Text.Contains` | `classify_date_format` |
-| Resolver fechas con barras con el rango de meses válido; si no se puede, `null` y "REVISAR CON SUPERVISOR" | `#date`, `Date.FromText` con `Culture = "en-US"` | `parse_date(..., meses_validos)` |
-| Quitar duplicados exactos | `Table.Distinct` | `deduplicate_exact` |
-| Llenar turnos vacíos con la tabla `Correcciones_Turno` (su contenido no está en el repo) | `Table.NestedJoin` (izquierda) | `resolve_turnos` + `data/manual/turno_overrides.csv` (los 3 de marzo, inferidos) |
-| Cruzar con el catálogo | `Table.NestedJoin` + `Table.ExpandTableColumn` | `join_con_catalogo` |
-| Costo total y % defectuosas | columnas calculadas | `compute_financials` |
-| Clasificación y turno problemático | columnas condicionales | `classify` |
+| Página | Tarjeta | Power BI | Pipeline | Coincide |
+|---|---|---|---|---|
+| Producción (02 a 18 mar) | Total producido (unidades) | 22.934 | 22.934 (marzo) | Sí |
+| Producción (02 a 18 mar) | Unidades defectuosas | 691 | 691 (marzo) | Sí |
+| Producción (02 a 18 mar) | Costo total producido (US$) | $87,84 mil | 87.841,83 (marzo) | Sí |
+| Resumen (sin filtro) | Suma de Costo_Total_Producido | 433,62194 mil€ | 365.045,29 (tres meses) | No |
 
-Los 5 paros vacíos se dejan en `null` a propósito; el comentario está en el propio código M:
-`// 5 vacíos de Tiempo_Paro_Min se dejan en null; no hay confirmación de que sean 0`.
+El pipeline de marzo va del 02/03/2026 al 18/03/2026, el mismo rango que el filtro de la
+página Producción. [`tests/test_guia_powerbi.py`](../tests/test_guia_powerbi.py) ya
+comprueba estas cifras de marzo contra la guía de la clase.
 
-**Cifras esperadas sin filtros** según el pipeline de Python sobre marzo
-(`TODO(demian)`: confirmar contra la captura): costo total producido USD 87.841,83 y
-691 unidades defectuosas.
+La página Resumen no tiene filtro de fechas visible. Muestra lo mismo que el Resumen de D4:
+94.906 unidades en la matriz línea × turno y 360 registros (Aceptable 164, Crítico 164,
+Excelente 32). Así, en D3 las páginas Resumen y Producción cubren periodos distintos.
 
-## 3. Producción, Calidad, Paros y costos (marzo, en construcción)
+## D4. Informe de Producción
 
-Dashboard de tres páginas que se está armando en la clase, sobre la misma consulta de
-Power Query del ejercicio anterior. `TODO(demian)`: agregar el `.pbix` y sus capturas
-cuando esté terminado.
+**Pregunta de negocio:** las mismas tres preguntas del ejercicio de clase (producción,
+calidad, paros y costos), con todos los meses disponibles.
 
-| Página | Pregunta de negocio | Lo que debe poder leer el gerente |
-|---|---|---|
-| Producción | ¿Cuánto producimos, dónde y cuándo? | 22.934 unidades; la Línea 1 produce más (7.994); Tornillería es la categoría de mayor volumen (8.096) |
-| Calidad | ¿Cumplimos la meta de 3 % de defectuosas? | 43 de 90 corridas son críticas; solo 2 turnos son problemáticos |
-| Paros y costos | ¿Dónde perdemos tiempo y dónde se concentra el costo? | El turno de la tarde para menos (12,3 min por corrida frente a 15,3); el costo se concentra en Engranajes (USD 54.323 de 87.842) |
+> **OJO:** que D4 sea el informe "combinado" es una suposición. Se basa en su filtro de
+> fechas (02/03/2026 a 29/05/2026), no en una confirmación.
 
-Cada página tiene 3 segmentadores, 3 tarjetas y 3 visuales; las páginas comparten
-segmentadores sincronizados y un navegador.
+![D4 Resumen](img/D4-1-resumen.jpg)
 
-**Ya está validado sin abrir Power BI.** La guía de la clase trae los valores que debe
-mostrar cada tarjeta y cada visual. [`tests/test_guia_powerbi.py`](../tests/test_guia_powerbi.py)
-comprueba que el pipeline de Python llega a los mismos números:
+![D4 Producción](img/D4-2-produccion.jpg)
 
-| Página | Qué se comprueba |
-|---|---|
-| Producción | Tarjetas (22.934, 691, 87,84 K), producción por línea y por categoría, 13 días con máximo y mínimo, y la interacción al filtrar Línea 1 |
-| Calidad | Tarjetas (90, 691, 2), calidad por línea, top 5 de productos con más defectuosas y las 2 filas de turnos problemáticos |
-| Paros y costos | Paro promedio 14,5 min y total 1.235, paro promedio por turno, matriz de costo categoría × línea y top 5 de productos por costo |
+![D4 Calidad](img/D4-3-calidad.jpg)
 
-El paro promedio es 14,5 y no 13,7 porque los 5 paros vacíos no se cuentan como 0: es la
-misma decisión en Power Query y en Python.
+![D4 Paros y costos](img/D4-4-paros-y-costos.jpg)
+
+Cada página tiene segmentadores (línea, turno o categoría, y fecha en Producción y Paros y
+costos), tres tarjetas y un navegador entre páginas. **Modelo:** una sola tabla,
+`Produccion_Limpia` (50 líneas de M).
+
+| Página | Tarjeta | Power BI | Pipeline, tres meses |
+|---|---|---|---|
+| Resumen | Suma de Costo_Total_Producido | $433,62 mil | 365.045,29 |
+| Producción | Total producido (unidades) | 94.906 | 73.148 |
+| Producción | Unidades defectuosas | 3 mil | 2.162 |
+| Producción | Costo total producido (US$) | $433,62 mil | 365.045,29 |
+| Calidad | Registros de producción | 360 | 290 |
+| Calidad | Unidades defectuosas | 3 mil | 2.162 |
+| Calidad | Turnos problemáticos | 16 | 9 |
+| Paros y costos | Paro promedio por registro (min) | 16,35 | 13,63 |
+| Paros y costos | Paro total (min) | 5,625 mil | 3.790 |
+| Paros y costos | Costo total producido (US$) | 433,62 mil | 365.045,29 |
+| Resumen (tabla) | Aceptable / Crítico / Excelente | 164 / 164 / 32 | 112 / 135 / 43 |
+
+El filtro de fechas de D4 tiene el mismo rango que el pipeline de tres meses (02/03/2026 a
+29/05/2026), pero ninguna tarjeta coincide.
+
+## Diferencias
+
+No se ajustó ninguna cifra. Donde la causa dice "sin verificar", es porque no abrí la
+fuente del `.pbix` para comprobarla.
+
+| # | Qué difiere | Valores | Causa |
+|---|---|---|---|
+| 1 | D2 frente a D4 | 285 corridas y 71,2 mil u, frente a 360 registros y 94.906 u | Sin verificar. Cargan tablas distintas (`tbl_Prod` y `Produccion_Limpia`) desde fuentes en OneDrive que no están en el repo |
+| 2 | D2 frente al pipeline | 285 frente a 290 corridas. Las otras 4 tarjetas también difieren (tabla de D2) | Sin verificar. D2 lee un Excel consolidado de OneDrive, no el dato crudo del repo |
+| 3 | D4 frente al pipeline | 360 frente a 290 registros, 94.906 frente a 73.148 u y el resto de la tabla de D4 | Sin verificar. Dato: el pipeline parte de 305 filas crudas (95 + 210, salida de `python -m src.cli`). 360 es más que eso, así que la diferencia no se explica solo por los duplicados |
+| 4 | D3 Resumen frente a D3 Producción | 433,62 mil frente a 87,84 mil de costo | La página Resumen no tiene filtro de fechas visible y suma lo mismo que D4. La página Producción está filtrada del 02 al 18 de marzo |
+| 5 | Moneda | Los títulos dicen "US$". En D3 la tarjeta del Resumen muestra €. En D4 la matriz y el top 5 de Paros y costos muestran € | Formato de moneda distinto entre visuales del mismo campo. Sin verificar en el `.pbix` |
+| 6 | Defectuosas en D4 | La tarjeta dice "3 mil"; el pipeline, 2.162, que redondearía a "2 mil" | Sin verificar. Va en la misma dirección que la diferencia 3 |
 
 ## Medidas DAX
 
-**Ninguno de los dos archivos tiene medidas DAX.** Todos los visuales usan agregaciones
-implícitas (suma, promedio, recuento) sobre columnas. Las únicas expresiones DAX del
-modelo son las de la tabla de fechas automática (`YEAR([Date])`, `MONTH([Date])`, etc.).
+**Sin medidas DAX propias; las 12 columnas calculadas son de la tabla de fechas automática.**
+Vale para D2, D3 y D4. Todos los visuales usan agregaciones implícitas (suma, promedio,
+recuento) sobre columnas. Las 12 columnas calculadas están en las tablas `LocalDateTable_…`
+y `DateTableTemplate_…`, que Power BI crea con la opción "Fecha y hora automáticas"
+(`YEAR([Date])`, `MONTH([Date])`, `FORMAT([Date], "MMMM")`, etc.).
 
-Si quieres mostrar DAX en el portafolio, estas tres medidas serían las naturales para
-este dashboard. Están propuestas, no extraídas: `TODO(demian)` crearlas en Power BI y
-pegar aquí la versión final.
+Para comprobarlo, se corre en local sobre los `.pbix`, que no están en el repo. `pbixray`
+no es dependencia del proyecto: se instala en un entorno aparte.
+
+```bash
+python3 -m venv /tmp/pbix && /tmp/pbix/bin/pip install pbixray
+/tmp/pbix/bin/python -c '
+import sys; from pathlib import Path; from pbixray import PBIXRay
+for p in sorted(Path(sys.argv[1]).glob("D[234]-*.pbix")):
+    m = PBIXRay(str(p)); c = m.dax_columns
+    print(p.name[:2], "medidas:", len(m.dax_measures), "columnas calculadas:", len(c),
+          "tablas:", sorted({t.split("_")[0] for t in c["TableName"]}))
+' "<carpeta con los .pbix>"
+```
+
+Salida: `medidas: 0 columnas calculadas: 12 tablas: ['DateTableTemplate', 'LocalDateTable']`
+para cada informe.
+
+Si se quiere mostrar DAX, estas serían las medidas naturales. Están propuestas, no
+extraídas:
 
 ```dax
 % Defectuoso Ponderado = DIVIDE ( SUM ( tbl_Prod[Unidades_Defectuosas] ), SUM ( tbl_Prod[Cantidad_Producida] ) )
@@ -145,12 +173,12 @@ Corridas Críticas = CALCULATE ( COUNTROWS ( tbl_Prod ), tbl_Prod[Calidad_3_Nive
 % Corridas Críticas = DIVIDE ( [Corridas Críticas], COUNTROWS ( tbl_Prod ) )
 ```
 
-La primera corrige una limitación real de la matriz actual: promedia el % de cada corrida
-sin ponderar por volumen, así que una corrida de 100 unidades pesa igual que una de 400.
+La primera corrige una limitación de la matriz de D2: promedia el % de cada corrida sin
+ponderar por volumen, así que una corrida de 100 unidades pesa igual que una de 400.
 
 ## Modelo de datos
 
-Hoy cada dashboard usa una sola tabla plana:
+Hoy cada informe usa una sola tabla plana:
 
 ```mermaid
 flowchart LR
@@ -162,7 +190,8 @@ flowchart LR
 El repo propone una alternativa: usar como fuente los CSV que genera
 `python -m src.sql_load` en `data/processed/vistas/`, o las tablas del modelo estrella de
 [`sql/schema.sql`](../sql/schema.sql). Así el dashboard consumiría datos ya limpios,
-versionados y cubiertos por tests.
+versionados y cubiertos por tests, y las diferencias 1 a 3 desaparecerían por
+construcción.
 
 ```mermaid
 erDiagram
@@ -178,7 +207,10 @@ Todas las relaciones son de uno a varios. `fact_produccion.fecha` admite nulos: 
 
 ## Privacidad
 
-- Los `.pbix` se quedan fuera del repo (ver arriba). Para mostrarlos: exportar PDF y
-  capturas, que no llevan la ruta de OneDrive.
+- Los `.pbix` se quedan fuera del repo. Para mostrarlos se usan capturas de Power BI
+  Service, que no llevan la ruta de OneDrive.
+- Antes de copiarlas se revisó que no muestren correos, rutas ni nombres ajenos.
+  [`tests/test_docs_powerbi.py`](../tests/test_docs_powerbi.py) falla si una imagen o un PDF
+  versionado declara en sus metadatos un autor o un "modificado por" distinto de Demian.
 - En el código de Power Query de [`power_query/`](power_query/) la URL se reemplazó por
   `<OneDrive>`.

@@ -5,18 +5,17 @@
 Tres meses de datos de producción de una metalúrgica (marzo a mayo de 2026), con errores de
 captura: 305 filas sucias que quedan en 290 corridas limpias. El mismo problema está
 resuelto con tres herramientas, y una prueba automática compara los resultados y explica
-cada diferencia.
+cada diferencia. Es el proyecto de la clase de Power BI IIN2002 (USFQ).
 
-<!-- TODO(demian): captura del dashboard. Exportar desde Power BI y guardar en docs/img/powerbi_calidad_paros.png -->
-![Dashboard de calidad y paros en Power BI](docs/img/powerbi_calidad_paros.png)
+![Informe de producción en Power BI, página Producción](docs/img/D4-2-produccion.jpg)
 
 ## Tres herramientas, un problema
 
 | Herramienta | Qué hace aquí | Dónde verlo |
 |---|---|---|
 | **Excel** | Limpieza con fórmulas (`XLOOKUP`, `IFS`, `COUNTIFS`, `SUMIFS`, `FILTER`, `SORT`, `UNIQUE`, `GETPIVOTDATA`), 13 tablas dinámicas, umbrales en hojas de parámetros y un dashboard | [docs/excel.md](docs/excel.md) · [entregables/excel/](entregables/excel/) |
-| **Power BI** | Dos dashboards: calidad y paros de los tres meses, y un ejercicio donde toda la limpieza se hace en Power Query (37 pasos en M). Un tercero, de tres páginas, está en construcción | [docs/powerbi.md](docs/powerbi.md) (los `.pbix` no se publican) |
-| **Python + SQL** | Pipeline ETL en pandas con reporte de calidad, modelo estrella en SQLite con 10 vistas, 122 tests y CI | [docs/python.md](docs/python.md) · [src/](src/) · [sql/](sql/) |
+| **Power BI** | Tres informes publicados en Power BI Service: calidad y paros (D2), un ejercicio donde toda la limpieza se hace en Power Query (D3), y el informe de producción de cuatro páginas (D4) | [docs/powerbi.md](docs/powerbi.md), con capturas de cada página (los `.pbix` no se publican) |
+| **Python + SQL** | Pipeline ETL en pandas con reporte de calidad, modelo estrella en SQLite con 10 vistas, 139 tests y CI | [docs/python.md](docs/python.md) · [src/](src/) · [sql/](sql/) |
 
 ## Reporte de calidad de datos
 
@@ -99,8 +98,10 @@ test avisa si eso cambia.
 
 **Power BI.** [`tests/test_guia_powerbi.py`](tests/test_guia_powerbi.py) comprueba que el
 pipeline reproduce los 12 grupos de checkpoints de la guía del dashboard de marzo
-(tarjetas, matrices y top 5 de sus tres páginas). Las cifras del dashboard de tres meses
-están por confirmar contra capturas (`TODO(demian)`, ver [docs/powerbi.md](docs/powerbi.md)).
+(tarjetas, matrices y top 5 de sus tres páginas). Contra las capturas, la página
+Producción de D3 (02 a 18 de marzo) coincide con el pipeline. D2 y D4 no coinciden con
+los tres meses del pipeline (D4 muestra 360 registros, el pipeline 290), y la causa sigue
+sin verificar. Tabla completa de diferencias en [docs/powerbi.md](docs/powerbi.md#diferencias).
 
 ## Cómo correrlo
 
@@ -110,7 +111,7 @@ pip install -e ".[dev]"
 
 python -m src.cli       # limpia los dos archivos, muestra el reporte y escribe data/processed/
 python -m src.sql_load  # crea la base SQLite y exporta las vistas a CSV
-pytest                  # 122 tests, incluida la prueba de consistencia
+pytest                  # 139 tests, incluida la prueba de consistencia
 ruff check . && mypy src
 ```
 
